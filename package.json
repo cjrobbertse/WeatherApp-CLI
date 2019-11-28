@@ -1,0 +1,23 @@
+{
+  "name": "weatherapp-cli",
+  "version": "1.0.0",
+  "description": "Learn to make API calls and build a Command Line Weather App.",
+  "main": "oldshitcunt.js",
+  "dependencies": {
+    "request": "^2.88.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cjrobbertse/WeatherApp-CLI.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cjrobbertse/WeatherApp-CLI/issues"
+  },
+  "homepage": "https://github.com/cjrobbertse/WeatherApp-CLI#readme"
+}
