@@ -277,3 +277,49 @@ request(url, function (err, response, body) {
     }
 });
 ```
+
+## Creating our Server (with Express JS)
+
+Create a new file called `server.js`.
+
+The first thing we need to do is get our server up and running. We’re going to use [Express](https://expressjs.com/) to accomplish this. Express is a minimalist web framework for Node.js — Express makes it very easy to create and run a web server with Node.
+
+Install express into your project via the console:
+
+```shell
+npm install --save express
+```
+
+Once installed, we’re going to copy the boilerplate Express starter app from the [Express documentation](https://expressjs.com/en/starter/hello-world.html):
+
+```js
+const express = require('express');
+const app = express();
+
+app.get('/', function (req, res) {
+  res.send('Hello World!')
+})
+
+app.listen(3000, function () {
+  console.log('Example app listening on port 3000!')
+})
+```
+
+Above is an example of the simplest application that we can create with Express. First we require the express package that was just installed. Then, we create an instance named `app` by invoking Express.
+
+The `app.get('/'...` means we are specifically focusing on the root URL (/). If we visit the root URL, Express will respond with “Hello World!”.
+
+The `app.listen(...` shows we are creating a server that is listening on port 3000 for connections.
+
+You can run it:
+
+```shell
+$ node server.js
+Example app listening on port 3000!
+```
+
+Now open your browser and to the URL: `http://localhost:3000/` and you should see the text "Hello World!"
+
+Awesome! You’ve just created a server with Node.js and Express!
+
+## Setting up the index view
