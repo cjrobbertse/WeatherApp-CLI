@@ -52,7 +52,7 @@ To make our API call, we’ll be using a popular npm module called [`request`](h
 Install the `request` module into your project
 
 ```shell
-npm install request --save
+npm install request
 ```
 
 To use the `request` module within your code, you must first import the module into the file.
@@ -199,7 +199,7 @@ request(url, function (err, response, body) {
 });
 ```
 
-The response `temp` doesn't look right; this is because the default response `temp` is in Kelvin. 
+The response `temp` doesn't look right; this is because the default response `temp` is in Kelvin.
 We could convert the Kelvin value into Celsius manually (`'C = K - 273.15`).
 
 ```js
@@ -233,7 +233,7 @@ The package [`yargs`](https://www.npmjs.com/package/yargs) allows us to parse co
 Install yargs
 
 ```shell
-npm install yargs --save
+npm install yargs
 ```
 
 Yargs works by exposing any variables we use in the console onto the argv object. We import and access this object like so:
@@ -287,7 +287,7 @@ The first thing we need to do is get our server up and running. We’re going to
 Install express into your project via the console:
 
 ```shell
-npm install --save express
+npm install express
 ```
 
 Once installed, we’re going to copy the boilerplate Express starter app from the [Express documentation](https://expressjs.com/en/starter/hello-world.html):
@@ -323,3 +323,181 @@ Now open your browser and to the URL: `http://localhost:3000/` and you should se
 Awesome! You’ve just created a server with Node.js and Express!
 
 ## Setting up the index view
+
+Instead of responding with text when someone visits our root route, we’d like to respond with an HTML file. For this, we’ll be using EJS ([Embedded JavaScript](http://www.embeddedjs.com/)). EJS is a templating language.
+
+In order to use EJS in Express, we need to set up our template engine:
+
+>A template engine enables you to use static template files in your application. At runtime, the template engine replaces variables in a template file with actual values, and transforms the template into an HTML file sent to the client. This approach makes it easier to design an HTML page.
+
+The short version is that EJS allows us to interact with variables and then dynamically create our HTML based on those variables! (This will make a lot more sense later in the tutorial)
+
+First, we’ll install ejs in the terminal:
+
+```shell
+npm install ejs
+```
+
+EJS is accessed by default in the `views` directory. So create a new folder named `views` in your directory. Within that views folder, add a file named index.ejs. Think of our `index.ejs` file as an HTML file for now.
+
+---
+
+Real quick, here’s what our file structure should look like thus far:
+
+```tree
+|-- weather-app
+   |-- views
+      |-- index.ejs
+   |-- package.json
+   |-- server.js
+```
+
+---
+
+Awesome, here’s a boilerplate for our `index.ejs` file. I’m not going to go over this file as this is not an HTML tutorial, but it should be pretty straight forward as we’re not using any EJS just yet. The html is just a form with one input for a city, and one submit button:
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Test</title>
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300' rel='stylesheet' type='text/css'>
+  </head>
+  <body>
+    <div class="container">
+      <fieldset>
+        <form action="/" method="post">
+          <input name="city" type="text" class="ghost-input" placeholder="Enter a City" required>
+          <input type="submit" class="ghost-button" value="Get Weather">
+        </form>
+      </fieldset>
+    </div>
+  </body>
+</html>
+```
+
+Once you have the above code copied into your `index.ejs` file, you’re almost done! The final thing we need to do is replace our `app.get` code from:
+
+```js
+app.get('/', function (req, res) {
+    res.send('Hello World!');
+});
+```
+
+Above is the old code where we send the text ‘Hello World!’ to the client. Instead, we want to send our index.ejs file:
+
+```js
+app.get('/', function (req, res) {
+    res.render('index');
+});
+```
+
+Instead of using res.send, we use res.render when working with a templating language. res.render will render our view, then send the equivalent HTML to the client.
+
+At this point, wee can test again by running:
+
+```shell
+$ node server.js
+Example app listening on port 3000!
+```
+
+![What you should see at this point](images/Get_Weather.png)
+
+## Adding a CSS File
+
+Yours will look a little less ‘pretty’ than mine. That’s because I’m making use of a css file to style my HTML. Here’s how we get our CSS to work:
+
+You’ll need to add a new folder to our project called public. Within that folder create a css folder, and finally create a file named style.css. Here’s your new file structure:
+
+```tree
+|-- weather-app
+   |-- views
+      |-- index.ejs
+   |-- public
+      |-- css
+         |-- style.css
+   |-- package.json
+   |-- server.js
+```
+
+Express wont allow access to this file by default, so we need to expose it with the following line of code:
+
+```js
+app.use(express.static('public'));
+```
+
+This code allows us to access all of the static files within the ‘public’ folder.
+
+Finally, we need our CSS. Since this isn’t a CSS course, I’m not going to be going over the specifics, but if you’d like to use my CSS, you can copy it from [here](https://github.com/bmorelli25/simple-nodejs-weather-app/blob/master/public/css/style.css).
+
+## Setting up our POST Route
+
+By now, your server.js file should look like this:
+
+```js
+const express = require('express');
+const app = express();
+
+app.use(express.static('public'));
+
+app.set('view engine', 'ejs');
+
+app.get('/', function (req, res) {
+    res.render('index');
+});
+
+app.listen(3000, function () {
+    console.log('Example app listening on port 3000!');
+});
+```
+
+We have one get route, and then we create our server. However, for our application to work, we need a post route as well. If you look at our `index.ejs` file, you can see that our form is submitting a post request to the `/` route:
+
+```html
+<form action="/" method="post">
+```
+
+Now that we know where our form is posting, we can set up the route! A post request looks just like a get request, with one minor change:
+
+```js
+app.post('/', function (req, res) {
+  res.render('index');
+})
+```
+
+But instead of just responding with the same html template, lets access the name of the city the user typed in as well. For this we need to use an *Express Middleware*.
+
+Express is a minimalist framework. However, we can make use of *Middleware* (functions that have access to the `req` and `res` bodies) in order to preform more advanced tasks.
+
+We’re going to make use of the `body-parser` middleware. `body-parser` allows us to make use of the key-value pairs stored on the `req-body` object. In this case, we’ll be able to access the city name the user typed in on the client side.
+
+To use `body-parser`, we must install it first:
+
+```shell
+npm install body-parser --save
+```
+
+Once installed, we can require it, and then make use of our middleware with the following line of code in our server.js
+
+const bodyParser = require('body-parser');
+// ...
+// ...app.use(bodyParser.urlencoded({ extended: true }));
+
+For the scope of this project, it’s not necessary you understand exactly how that line of code works. Just know that by using body-parser we can make use of the req.body object.
+
+Finally, we can now update our post request to log the value of ‘city’ to the console.
+
+app.post('/', function (req, res) {
+  res.render('index');
+  console.log(req.body.city);
+})
+
+Lets test it!
+
+node server.js// Example app listening on port 3000!
+
+Now open your browser and visit: localhost:3000, type a city name into the field and hit enter!
+
+If you go back to your command prompt, you should see the city name displayed in the prompt! Awesome, you’ve now successfully passed data from the client to the server!
