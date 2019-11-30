@@ -476,28 +476,251 @@ We’re going to make use of the `body-parser` middleware. `body-parser` allows 
 To use `body-parser`, we must install it first:
 
 ```shell
-npm install body-parser --save
+npm install body-parser
 ```
 
 Once installed, we can require it, and then make use of our middleware with the following line of code in our server.js
 
+```js
 const bodyParser = require('body-parser');
 // ...
-// ...app.use(bodyParser.urlencoded({ extended: true }));
+// ...
 
-For the scope of this project, it’s not necessary you understand exactly how that line of code works. Just know that by using body-parser we can make use of the req.body object.
+app.use(bodyParser.urlencoded({ extended: true }));
+```
+
+For the scope of this project, it’s not necessary you understand exactly how that line of code works. Just know that by using `body-parser` we can make use of the `req.body` object.
 
 Finally, we can now update our post request to log the value of ‘city’ to the console.
 
+```js
 app.post('/', function (req, res) {
   res.render('index');
   console.log(req.body.city);
 })
+```
 
 Lets test it!
 
-node server.js// Example app listening on port 3000!
+```shell
+$ node server.js
+Example app listening on port 3000!
+```
 
-Now open your browser and visit: localhost:3000, type a city name into the field and hit enter!
+Now open your browser and visit: `localhost:3000`, type a city name into the field and hit enter!
 
 If you go back to your command prompt, you should see the city name displayed in the prompt! Awesome, you’ve now successfully passed data from the client to the server!
+
+If you can’t get it to work, here’s what your `server.js` file should look like now:
+
+```js
+const express = require('express');
+const app = express();
+const bodyParse = require('body-parser');
+
+app.use(express.static('public'));
+app.use(bodyParse.urlencoded({ extended: true }));
+
+app.set('view engine', 'ejs');
+
+app.get('/', function (req, res) {
+    res.render('index');
+});
+
+app.post('/', function (req, res) {
+    res.render('index');
+    console.log(req.body.city);
+});
+
+app.listen(3000, function () {
+    console.log('Example app listening on port 3000!');
+});
+
+```
+
+## Finishing app.post
+
+To finish up this project, you’ll need the code from earlier in the `index.js` file.
+
+```js
+const request = require('request');
+const apiKey = '*****************';
+//...
+//...
+app.post('/', function (req, res) {
+  let cityName = req.body.city;
+  let url = `http://api.openweathermap.org/data/2.5/weather?q=${cityName}&units=imperial&appid=${apiKey}`
+  request(url, function (err, response, body) {
+    if(err){
+      res.render('index', {weather: null, error: 'Error, please try again'});
+    } else {
+      let weather = JSON.parse(body)
+      if(weather.main == undefined){
+        res.render('index', {weather: null, error: 'Error, please try again'});
+      } else {
+        let weatherText = `It's ${weather.main.temp} degrees in ${weather.name}!`;
+        res.render('index', {weather: weatherText, error: null});
+      }
+    }
+  });
+})
+```
+
+### 1. Setting up our URL
+
+The first thing we do when we receive the post request is grab the city off of `req.body`. Then we create a `url` string that we’ll use to access the OpenWeatherMap API with
+
+```js
+app.post('/', function (req, res) {
+    let cityName = req.body.city;
+    let url = `http://api.openweathermap.org/data/2.5/weather?q=${cityName}&units=metric&APPID=${apiKey}`;
+});
+```
+
+### 2. Make our API call
+
+Now that we have our URL, we can make our API call. When we receive our callback, the first thing we’re going to do is check for an error. If we have an error, we’re going to render our index page. But notice that I’ve also added in a second argument. `res.render` has an optional second argument — an object where we can specify properties to be handled by our view ( `index.ejs` ).
+
+In this instance, I’ve added an error string:
+
+```js
+request(url, function (err, response, body) {
+    if(err){
+      res.render('index', {weather: null, error: 'Error, please try again'});
+```
+
+### 3. Display the weather
+
+Now that we know we have no API error, we can parse our JSON into a usable JavaScript object.
+
+The first thing we’ll do is check to see if `weather.main == undefined`. The only reason why this would be undefined, is if our user input a string that isn’t a city (‘3’, ‘afefaefefe’, etc.). In this instance, we’ll render the index view, and we’ll also pass back an error.
+
+If `weather.main != undefined`, then we can finally send back the weather to the client! We’ll create a string that clarifies what the weather is, and send that back with the index view.
+
+```js
+} else {
+  let weather = JSON.parse(body)  if(weather.main == undefined){
+    res.render('index', {weather: null, error: 'Error, please try again'});
+  } else {
+    let weatherText = `It's ${weather.main.temp} degrees in ${weather.name}!`;
+    res.render('index', {weather: weatherText, error: null});
+  }
+}
+```
+
+## Using EJS
+
+There’s only one thing left to do at this point… Make use of all those variables we sent back with our `res.render` call. These variables aren’t available on the client, this is where we finally get to use EJS. There are three possible scenarios that we have in our code:
+
+1. `{weather: null, error: null}`
+2. `{weather: null, error: ‘Error, please try again’}`
+3. `{weather: weatherText, error: null}`
+
+We need to make two simple changes to our `index.ejs` to handle these three scenarios. Here’s the code, then I’ll walk you through it:
+
+```html
+<% if(weather !== null){ %>
+  <p><%= weather %></p>
+<% } %><% if(error !== null){ %>
+  <p><%= error %></p>
+<% } %>
+```
+
+It helps to remember that EJS stands for Embedded JavaScript. With that in mind, EJS has opening and closing brackets: `<% CODE HERE %>` Anything between the brackets is executed. If the opening bracket also includes an equal sign: `<%= CODE HERE ADDS HTML %>`, then that code will add HTML to the result.
+
+If you look at our EJS that we’ve added, we’re testing to see if either of our `weather`, or `error` variables are null. If they’re both `null`, nothing happens. However, if one isn’t null (i.e. it has a value), then we will add a paragraph to the screen with the value of the respective variable.
+
+## index.ejs
+
+Here’s what your index.ejs should look like:
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Test</title>
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300' rel='stylesheet' type='text/css'>
+  </head>
+  <body>
+    <div class="container">
+      <fieldset>
+        <form action="/" method="post">
+          <input name="city" type="text" class="ghost-input" placeholder="Enter a City" required>
+          <input type="submit" class="ghost-button" value="Get Weather">
+        </form>
+        <% if(weather !== null){ %>
+          <p><%= weather %></p>
+        <% } %>
+
+        <% if(error !== null){ %>
+          <p><%= error %></p>
+        <% } %>
+      </fieldset>
+    </div>
+  </body>
+</html>
+```
+
+## server.js
+
+Here’s what your server.js should look like:
+
+```js
+const express = require('express');
+const bodyParser = require('body-parser');
+const request = require('request');
+const app = express()
+
+const apiKey = '*****************';
+
+app.use(express.static('public'));
+app.use(bodyParser.urlencoded({ extended: true }));
+app.set('view engine', 'ejs')
+
+app.get('/', function (req, res) {
+  res.render('index', {weather: null, error: null});
+})
+
+app.post('/', function (req, res) {
+  let city = req.body.city;
+  let url = `http://api.openweathermap.org/data/2.5/weather?q=${city}&units=imperial&appid=${apiKey}`
+
+  request(url, function (err, response, body) {
+    if(err){
+      res.render('index', {weather: null, error: 'Error, please try again'});
+    } else {
+      let weather = JSON.parse(body)
+      if(weather.main == undefined){
+        res.render('index', {weather: null, error: 'Error, please try again'});
+      } else {
+        let weatherText = `It's ${weather.main.temp} degrees in ${weather.name}!`;
+        res.render('index', {weather: weatherText, error: null});
+      }
+    }
+  });
+})
+
+app.listen(3000, function () {
+  console.log('Example app listening on port 3000!')
+})
+```
+
+## Run your code
+
+>Reminder: all of the code for this project can be found in the [GitHub Repo](https://github.com/bmorelli25/simple-nodejs-weather-app)
+
+```shell
+$ node server.js
+Example app listening on port 3000!
+```
+
+Now open your browser and visit: localhost:3000, type a city name into the field and hit enter! You should see the weather appear on your screen!
+
+**You just built a website that makes API calls and responds to the client in real time!**
+
+---
+
+Shout out to *Brandon Morelli* for writing this great [tutorial](https://codeburst.io/build-a-weather-website-in-30-minutes-with-node-js-express-openweather-a317f904897b).
+

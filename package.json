@@ -4,6 +4,7 @@
   "description": "Learn to make API calls and build a Command Line Weather App.",
   "main": "oldshitcunt.js",
   "dependencies": {
+    "body-parser": "^1.19.0",
     "ejs": "^3.0.1",
     "express": "^4.17.1",
     "request": "^2.88.0",
